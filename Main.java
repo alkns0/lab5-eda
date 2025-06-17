@@ -57,12 +57,31 @@ class ScoreBoard {
 			p1.addDraw();
 			p2.addLoss();
 		}
-
 	}
+	
+	public void registerPlayer(String playerName){
+	        if (!checkPlayer(playerName)){
+	            Player player = new Player(playerName);
+	            players.put(playerName, player);
+	        }	 
+	        else {
+	            System.out.println("Ya está en el tree map");
+	        }
+	}
+	
+	public boolean checkPlayer(String playerName){
+	    if (players.containsKey(playerName)){
+	        return true;
+	    }
+	    else {
+	        return false;
+	    }
+	}
+	
 }
 	public class Main
 	{
 		public static void main(String[] args) {
-            System.out.println("holamundo");
+            		System.out.println("holamundo");
 		}
 	}
