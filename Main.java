@@ -48,21 +48,21 @@ class ScoreBoard {
 		if(!draw) {
 			p1.addWin();
 			winTree.put(p1.wins,winnerPlayerName);
-			player.put(winnerPlayerName,p1);
+			players.put(winnerPlayerName,p1);
 
 			p2.addLoss();
 			winTree.put(p1.wins,looserPlayerName);
-			player.put(looserPlayerName,p2);
+			players.put(looserPlayerName,p2);
 		} else {
-			p1.addDraw;
-			p2.addLoss;
+			p1.addDraw();
+			p2.addLoss();
 		}
 
 	}
+}
 	public class Main
 	{
 		public static void main(String[] args) {
-
-
+            System.out.println("holamundo");
 		}
 	}
