@@ -1,5 +1,4 @@
 import java.util.*;
-
 class Player {
     String playerName;
     int wins;
@@ -300,7 +299,7 @@ class Game {
     }
 }
 
-public class Main {
+public class MainModificado {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         ScoreBoard scoreBoard = new ScoreBoard();
