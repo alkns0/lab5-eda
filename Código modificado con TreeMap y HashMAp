@@ -1,0 +1,320 @@
+import java.util.*;
+
+class Player {
+    String playerName;
+    int wins;
+    int draws;
+    int losses;
+
+    public Player(String name) {
+        this.playerName=name;
+        this.wins=0;
+        this.draws=0;
+        this.losses=0;
+    }
+
+    public void addWin() {
+        wins++;
+    }
+
+    public void addDraw() {
+        draws++;
+    }
+
+    public void addLoss() {
+        losses++;
+    }
+
+    public double winRate() {
+        int totalGames = wins + draws + losses;
+        if(totalGames==0) {
+            return 0.0;
+        } else {
+            return (double)wins/totalGames;
+        }
+    }
+    public int getWins() {
+        return wins;
+    }
+}
+
+class ScoreBoard {
+    TreeMap<Integer, List<String>> winTree = new TreeMap<>();
+    HashMap<String, Player> players = new HashMap<>();
+    int playedGames=0;
+
+    public void addGameResult(String winnerPlayerName, String looserPlayerName, boolean draw) {
+        registerPlayer(winnerPlayerName);
+        registerPlayer(looserPlayerName);
+
+        Player winner = players.get(winnerPlayerName);
+        Player loser = players.get(looserPlayerName);
+        
+        if(!draw) {
+            if (winner.getWins() > 0 && winTree.containsKey(winner.getWins())) {
+                List<String> o = winTree.get(winner.getWins());
+                o.remove(winner.playerName);
+                
+                if (o.isEmpty()) {
+                    winTree.remove(winner.getWins());
+                }
+            }
+            winner.addWin();
+            loser.addLoss();
+            
+            winTree.computeIfAbsent(winner.getWins(), k -> new ArrayList<>()).add(winner.playerName);
+
+        } else {
+            winner.addDraw();
+            loser.addDraw();
+        }
+
+        playedGames++;
+    }
+
+    public void registerPlayer(String playerName){
+        if (!players.containsKey(playerName)){
+            players.put(playerName, new Player(playerName));
+        }
+    }
+
+    public boolean checkPlayer(String playerName){
+        return players.containsKey(playerName);
+    }
+
+    public ArrayList <Player> winRange(int desde, int hasta){
+    ArrayList <Player> lista = new ArrayList <Player>();
+        for (List<String> playerNamesList : winTree.values()) {
+            for (String playerName : playerNamesList) {
+                Player p = players.get(playerName);
+                if (p != null && p.getWins() >= desde && p.getWins() <= hasta) {
+                    lista.add(p);
+                }
+            }
+        }
+        return lista;
+    }
+
+    public Player[] winSuccessor(int wins){
+        List<Player> result = new ArrayList<>();
+        Integer successorKey = winTree.ceilingKey(wins);
+        if (successorKey != null) {
+            List<String> playerNames = winTree.get(successorKey);
+            if (playerNames != null) { 
+                for (String name : playerNames) {
+                    Player p = players.get(name);
+                    if (p != null) {
+                        result.add(p);
+                    }
+                }
+            }
+        }
+        return result.toArray(new Player[0]);
+    }
+}
+
+class ConnectFour {
+    final int columnas=6;
+    final int filas=7;
+    char[][] grid;
+    char currentSymbol;
+
+    public ConnectFour(){
+        grid= new char[filas][columnas];
+        for(int i = 0; i < filas; i++){
+            for(int j = 0; j < columnas; j++){
+                grid[i][j] = ' ';
+            }
+        }
+        currentSymbol = 'X';
+    }
+
+    public boolean makeMove(int z){
+
+        if (z < 0 || z >= 7) {
+            return false;
+        }
+
+        for(int f = filas-1 ; f >= 0; f--){
+            if (grid[f][z] == ' '){
+                grid[f][z] = currentSymbol;
+                if(currentSymbol == 'X') {
+                    currentSymbol = 'O';
+                } else {
+                    currentSymbol = 'X';
+                }
+                return true;
+            }
+        }
+        //si llega hasta aqui quiere decir que esta llena
+        return false;
+    }
+
+    public boolean isGameOver(){
+        if (checkWin('X') || checkWin('O')) {
+            return true;
+        }
+        return Empate();
+    }
+
+    boolean Empate() {
+        for (int c = 0; c < 6; c++) {
+            if (grid[0][c] == ' ') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    boolean checkWin(char player) {
+
+        for (int f = 0; f < filas; f++) {
+            for (int c = 0; c < columnas; c++) {
+
+                // Horizontal
+                if (c <= 2 && grid[f][c] == player && grid[f][c+1] == player &&
+                        grid[f][c+2] == player && grid[f][c+3] == player) {
+                    return true;
+                }
+
+                // Vertical
+                if (f <= 3 &&
+                        grid[f][c] == player && grid[f+1][c] == player &&
+                        grid[f+2][c] == player && grid[f+3][c] == player) {
+                    return true;
+                }
+
+                // Diagonal derecha (\)
+                if (f <= 3 && c <= 2 &&
+                        grid[f][c] == player && grid[f+1][c+1] == player &&
+                        grid[f+2][c+2] == player && grid[f+3][c+3] == player) {
+                    return true;
+                }
+
+                // Diagonal izquierda (/)
+                if (f <= 3 && c >= 3 &&
+                        grid[f][c] == player && grid[f+1][c-1] == player &&
+                        grid[f+2][c-2] == player && grid[f+3][c-3] == player) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public void MostrarJuego() {
+        System.out.println("\n  0   1   2   3   4   5"); // Encabezado de columnas
+
+        // Borde superior
+        System.out.println("+---+---+---+---+---+---+");
+
+        for (int fila = 0; fila < filas; fila++) {
+            System.out.print("| ");
+            for (int col = 0; col < columnas; col++) {
+                //x-> rojos ; o-> Amarillo
+                if (grid[fila][col] == 'X') {
+                    System.out.print("\u001B[31mX\u001B[0m | ");  // Rojo
+                } else if (grid[fila][col] == 'O') {
+                    System.out.print("\u001B[33mO\u001B[0m | ");  // Amarillo
+                } else {
+                    System.out.print("  | ");
+                }
+            }
+            System.out.println();
+
+            System.out.println("+---+---+---+---+---+---+");
+        }
+
+        // Turnos
+        System.out.println("Turno actual: " +
+                (currentSymbol == 'X' ? "\u001B[31mX\u001B[0m" : "\u001B[33mO\u001B[0m"));
+    }
+}
+
+class Game {
+    String status;
+    String winnerPlayerName;
+    String playerNameA;
+    String playerNameB;
+    ConnectFour juego;
+
+    public Game(String _playerNameA, String _playerNameB){
+        playerNameA = _playerNameA;
+        playerNameB = _playerNameB;
+        winnerPlayerName = "";
+        status = "IN_PROGRESS";
+        juego = new ConnectFour();
+    }
+
+    public String play(){
+        Scanner scanner = new Scanner(System.in);
+        while (status.equals("IN_PROGRESS")) {
+
+            System.out.print("\033[H\033[2J");
+            //limpiar pantalla cada vez
+            System.out.flush();
+
+            // Mostrar tablero
+            juego.MostrarJuego();
+
+            // Obtener movimiento válido
+            boolean validMove = false;
+            while (!validMove && status.equals("IN_PROGRESS")) {
+                try {
+                    System.out.print("Ingresa columna (0-5): ");
+                    int column = scanner.nextInt();
+
+                    if (column < 0 || column > 5) {
+                        System.out.println("¡Columna inválida! Debe ser entre 0 y 5.");
+                        continue;
+                    }
+
+                    validMove = juego.makeMove(column);
+                    if (!validMove) {
+                        System.out.println("¡Columna llena! Elige otra columna.");
+                    }
+                } catch (InputMismatchException e) {
+                    System.out.println("¡Entrada inválida! Debes ingresar un número.");
+                    scanner.next(); // Limpiar el buffer
+                }
+            }
+
+            // Verificar estado del juego después de cada movimiento
+            if (juego.isGameOver()) {
+                if (juego.checkWin('X')) {
+                    status = "VICTORY";
+                    winnerPlayerName = playerNameA;
+                    System.out.println("¡GANADOR: " + winnerPlayerName + " (X)!");
+                } else if (juego.checkWin('O')) {
+                    status = "VICTORY";
+                    winnerPlayerName = playerNameB;
+                    System.out.println("¡GANADOR: " + winnerPlayerName + " (O)!");
+                } else {
+                    status = "DRAW";
+                    winnerPlayerName = "";
+                    System.out.println("¡EMPATE!");
+                }
+                juego.MostrarJuego();
+            }
+        }
+        return winnerPlayerName;
+    }
+}
+
+public class Main{
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        ScoreBoard scoreBoard = new ScoreBoard();
+        System.out.println("ConnectFour");
+        System.out.println("ingresar nombres");
+
+        System.out.print("Jugador 1 (X): ");
+        String playerB = scanner.nextLine();
+
+        System.out.print("Jugador 2 (O): ");
+        String playerA = scanner.nextLine();
+
+        Game game = new Game(playerA, playerB);
+        game.play();
+
+    }
+}
