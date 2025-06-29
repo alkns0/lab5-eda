@@ -300,21 +300,200 @@ class Game {
     }
 }
 
-public class Main{
+public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         ScoreBoard scoreBoard = new ScoreBoard();
-        System.out.println("ConnectFour");
-        System.out.println("ingresar nombres");
+        boolean exitProgram = false;
+        System.out.println("\n¡Bienvenido a Conecta 4!");
 
-        System.out.print("Jugador 1 (X): ");
-        String playerB = scanner.nextLine();
+        while (!exitProgram) {
+            System.out.println("\n--- Menú Principal ---");
+            System.out.println("1. Registrar nuevo jugador");
+            System.out.println("2. Iniciar una nueva partida");
+            System.out.println("3. Ver estadísticas de jugadores");
+            System.out.println("4. Buscar jugador por rango de victorias");
+            System.out.println("5. Buscar jugador por sucesor de victorias");
+            System.out.println("6. Salir");
+            System.out.print("Elige una opción: ");
 
-        System.out.print("Jugador 2 (O): ");
-        String playerA = scanner.nextLine();
+            try {
+                int choice = scanner.nextInt();
+                scanner.nextLine();
 
+                switch (choice) {
+                    case 1:
+                        registrar(scanner, scoreBoard);
+                        break;
+                    case 2:
+                        Jugar(scanner, scoreBoard);
+                        break;
+                    case 3:
+                        Estadisticas(scoreBoard);
+                        break;
+                    case 4:
+                        BuscarJugadoresRango(scanner, scoreBoard);
+                        break;
+                    case 5:
+                        BuscarJugadorSucesor(scanner, scoreBoard);
+                        break;
+                    case 6:
+                        exitProgram = true;
+                        System.out.println("Gracias por jugar");
+                        break;
+                    default:
+                        System.out.println("Opción no válida. Por favor, intenta de nuevo.");
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Entrada inválida. Por favor, ingresa un número.");
+                scanner.nextLine();
+            }
+        }
+        scanner.close();
+    }
+
+    static void registrar(Scanner scanner, ScoreBoard scoreBoard) {
+        System.out.println("\n--- Registrar Nuevo Jugador ---");
+        System.out.print("Ingresa el nombre del nuevo jugador: ");
+        String playerName = scanner.nextLine();
+        if (scoreBoard.checkPlayer(playerName)) {
+            System.out.println("El jugador '" + playerName + "' ya está registrado.");
+        } else {
+            scoreBoard.registerPlayer(playerName);
+            System.out.println("Jugador '" + playerName + "' registrado exitosamente.");
+        }
+    }
+
+    static String selectPlayer(Scanner scanner, ScoreBoard scoreBoard, String prompt) {
+        String chosenPlayerName = null;
+        while (chosenPlayerName == null) {
+            System.out.print(prompt + " (ingresa el nombre): ");
+            String input = scanner.nextLine();
+            if (scoreBoard.checkPlayer(input)) {
+                chosenPlayerName = input;
+            } else {
+                System.out.println("Jugador '" + input + "' no encontrado. Por favor, asegúrate de haberlo registrado primero.");
+            }
+        }
+        return chosenPlayerName;
+    }
+
+    static void Jugar(Scanner scanner, ScoreBoard scoreBoard) {
+        System.out.println("\n--- Iniciar Nueva Partida ---");
+        if (scoreBoard.players.size() < 2) { 
+            System.out.println("Necesitas al menos 2 jugadores registrados para iniciar una partida.");
+            return;
+        }
+
+        String playerA = selectPlayer(scanner, scoreBoard, "Jugador 1 (X)");
+        if (playerA == null) return;
+
+        String playerB;
+        while (true) {
+            playerB = selectPlayer(scanner, scoreBoard, "Jugador 2 (O)");
+            if (playerB == null) return;
+            if (!playerA.equals(playerB)) {
+                break;
+            }
+            System.out.println("¡Los jugadores no pueden ser los mismos! Por favor, elige otro Jugador 2.");
+        }
+
+        System.out.println("\n¡Iniciando partida entre " + playerA + " (X) y " + playerB + " (O)!");
         Game game = new Game(playerA, playerB);
-        game.play();
+        String gameResult = game.play(); 
 
+        switch (game.status) {
+            case "VICTORY":
+                String winnerName = gameResult;
+                String loserName = winnerName.equals(playerA) ? playerB : playerA;
+                scoreBoard.addGameResult(winnerName, loserName, false);
+                System.out.println("Resultado registrado: " + winnerName + " gana la partida.");
+                break;
+            case "DRAW":
+                scoreBoard.addGameResult(playerA, playerB, true);
+                System.out.println("Resultado registrado: partida empatada.");
+                break;
+        }
+        System.out.println("Presiona Enter para continuar...");
+        scanner.nextLine(); 
+    }
+
+    static void Estadisticas(ScoreBoard scoreBoard) {
+        System.out.println("\n--- Estadísticas de Todos los Jugadores ---");
+
+        List<Player> allPlayers = new ArrayList<>(scoreBoard.players.values());
+
+        if (allPlayers.isEmpty()) {
+            System.out.println("No hay jugadores registrados.");
+            System.out.println("Registra un jugador para ver estadísticas.");
+            return;
+        }
+
+        allPlayers.sort((p1, p2) -> {
+            if (p1.getWins() != p2.getWins()) {
+                return Integer.compare(p2.getWins(), p1.getWins()); 
+            }
+            return p1.playerName.compareTo(p2.playerName); 
+        });
+
+        System.out.println("\nJugadores ordenados por victorias:");
+        for (Player p : allPlayers) {
+            System.out.println("Jugador: " + p.playerName + ", Victorias: " + p.wins + ", Derrotas: " + p.losses + ", Empates: " + p.draws);
+        }
+        
+        if (scoreBoard.playedGames > 0) {
+            System.out.println("\nTotal de partidas jugadas: " + scoreBoard.playedGames);
+        }
+    }
+
+    static void BuscarJugadoresRango(Scanner scanner, ScoreBoard scoreBoard) {
+        System.out.println("\n--- Buscar Jugadores por Rango de Victorias ---");
+        try {
+            System.out.print("Ingresa el número mínimo de victorias (desde): ");
+            int desde = scanner.nextInt();
+            System.out.print("Ingresa el número máximo de victorias (hasta): ");
+            int hasta = scanner.nextInt();
+            scanner.nextLine();
+
+            if (desde > hasta || desde < 0) {
+                System.out.println("Rango inválido. Asegúrate que 'desde' sea <= 'hasta' y ambos sean no negativos.");
+                return;
+            }
+
+            ArrayList<Player> playersInRange = scoreBoard.winRange(desde, hasta);
+            if (playersInRange.isEmpty()) {
+                System.out.println("No se encontraron jugadores con victorias entre " + desde + " y " + hasta + ".");
+            } else {
+                System.out.println("Jugadores con victorias entre " + desde + " y " + hasta + ":");
+                for (Player p : playersInRange) {
+                    System.out.println("Jugador: " + p.playerName + ", Victorias: " + p.wins + ", Derrotas: " + p.losses + ", Empates: " + p.draws);
+                }
+            }
+        } catch (InputMismatchException e) {
+            System.out.println("Entrada inválida. Por favor, ingresa números para el rango.");
+            scanner.nextLine();
+        }
+    }
+
+    static void BuscarJugadorSucesor(Scanner scanner, ScoreBoard scoreBoard) {
+        System.out.println("\n--- Buscar Jugador por Sucesores de Victorias ---");
+        try {
+            System.out.print("Ingresa la cantidad de victorias para buscar su sucesor: ");
+            int wins = scanner.nextInt();
+            scanner.nextLine();
+
+            Player[] successors = scoreBoard.winSuccessor(wins);
+            if (successors.length > 0) {
+                System.out.println("Jugadores con " + wins + " o más victorias (el más cercano):");
+                for (Player p : successors) {
+                    System.out.println("Jugador: " + p.playerName + ", Victorias: " + p.wins + ", Derrotas: " + p.losses + ", Empates: " + p.draws);
+                }
+            } else {
+                System.out.println("No se encontraron jugadores con esa cantidad o más de victorias.");
+            }
+        } catch (InputMismatchException e) {
+            System.out.println("Entrada inválida. Por favor, ingresa un número.");
+            scanner.nextLine(); 
+        }
     }
 }
